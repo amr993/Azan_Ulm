@@ -331,5 +331,4 @@ private fun formatDuration(d: Duration): String {
     val m = (total % 3600) / 60
     val s = total % 60
     return if (h > 0) "%dh %02dm %02ds".format(h, m, s) else "%dm %02ds".format(m, s)
-}
-                                  
+}                           
