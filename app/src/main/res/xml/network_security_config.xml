@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- The app makes no network calls. This is defense-in-depth: it blocks all
+         cleartext (non-HTTPS) traffic and refuses to trust user-installed CAs,
+         which prevents man-in-the-middle interception even if a library tried. -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
