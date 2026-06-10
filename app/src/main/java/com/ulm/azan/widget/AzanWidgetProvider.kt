@@ -57,15 +57,18 @@ class AzanWidgetProvider : AppWidgetProvider() {
             val next = NextPrayer.compute(store.loadAll(), settings, LocalDateTime.now())
 
             if (next == null) {
+                views.setViewVisibility(R.id.widget_header, View.GONE)
                 views.setViewVisibility(R.id.widget_countdown, View.GONE)
                 views.setViewVisibility(R.id.widget_empty, View.VISIBLE)
                 views.setTextViewText(R.id.widget_prayer, "Azan Ulm")
                 views.setTextViewText(
                     R.id.widget_empty,
-                    if (!settings.enabled) "Azan is turned off" else "Open app to add times"
+                    if (!settings.enabled) "Azan is turned off"
+                    else "Open the app to add this month's times"
                 )
             } else {
                 val (prayer, dateTime) = next
+                views.setViewVisibility(R.id.widget_header, View.VISIBLE)
                 views.setViewVisibility(R.id.widget_countdown, View.VISIBLE)
                 views.setViewVisibility(R.id.widget_empty, View.GONE)
                 views.setTextViewText(

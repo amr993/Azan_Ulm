@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.ulm.azan.data.PrayerStore
+import com.ulm.azan.location.HomeGeofence
 
 /** Re-schedules alarms after reboot, app update, or a clock/timezone change. */
 class BootReceiver : BroadcastReceiver() {
@@ -16,6 +17,8 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_TIMEZONE_CHANGED -> {
                 PrayerStore(context).ensureSeeded()
                 PrayerScheduler.rescheduleAll(context)
+                // Geofences do not survive a reboot or app update.
+                HomeGeofence.sync(context)
             }
         }
     }

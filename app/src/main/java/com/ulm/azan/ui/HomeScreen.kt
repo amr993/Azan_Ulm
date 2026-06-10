@@ -26,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ulm.azan.alarm.AzanPlaybackState
 import com.ulm.azan.data.DayTimes
 import com.ulm.azan.data.Prayer
 import com.ulm.azan.data.PrayerStore
@@ -54,8 +52,6 @@ private val DATE_FMT: DateTimeFormatter =
     DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.ENGLISH)
 private val TIME_FMT: DateTimeFormatter =
     DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
-private val RANGE_FMT: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
 
 @Composable
 fun HomeScreen(
@@ -68,12 +64,10 @@ fun HomeScreen(
     onScanCamera: () -> Unit,
     onOpenSettings: () -> Unit,
     onRequestNotifications: () -> Unit,
-    onTestAzan: (Prayer) -> Unit,
 ) {
     val context = LocalContext.current
     val settings = remember { Settings(context) }
     val all = remember(dataVersion) { store.loadAll() }
-    val playing by AzanPlaybackState.playing.collectAsState()
 
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -265,38 +259,41 @@ fun HomeScreen(
                 }
 
                 Spacer(Modifier.height(4.dp))
+                Text(
+                    "Monthly timetable",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(8.dp))
                 Button(
                     onClick = onScanGallery,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
-                ) { Text("Scan a sheet from gallery") }
+                ) { Text("Scan the timetable from gallery") }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = onScanCamera,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
-                ) { Text("Take a photo of the sheet") }
+                ) { Text("Photograph the timetable") }
                 Spacer(Modifier.height(8.dp))
                 OutlinedButton(
                     onClick = onOpenSettings,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 ) { Text("Settings") }
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = { onTestAzan(Prayer.DHUHR) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (playing == Prayer.DHUHR.key) "Stop azan" else "Test azan now")
-                }
 
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    "Stored: ${all.size} day(s)" + (store.dateRange()?.let {
-                        " (${it.first.format(RANGE_FMT)} – ${it.second.format(RANGE_FMT)})"
-                    } ?: ""),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                store.dateRange()?.let { range ->
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Prayer times available until ${range.second.format(DATE_FMT)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Spacer(Modifier.height(24.dp))
             }
         }

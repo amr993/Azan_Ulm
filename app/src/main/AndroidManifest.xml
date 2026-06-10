@@ -64,6 +64,11 @@
         </receiver>
 
         <receiver
+            android:name=".location.GeofenceReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
             android:name=".widget.AzanWidgetProvider"
             android:exported="false">
             <intent-filter>

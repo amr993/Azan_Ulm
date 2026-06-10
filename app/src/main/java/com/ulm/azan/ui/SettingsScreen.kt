@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -37,8 +36,14 @@ import com.ulm.azan.alarm.AzanPlaybackState
 import com.ulm.azan.data.Prayer
 import com.ulm.azan.data.PrayerStore
 import com.ulm.azan.data.Settings
+import com.ulm.azan.location.HomeGeofence
 import com.ulm.azan.location.LocationGate
 import com.ulm.azan.util.AppPermissions
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+private val SHEET_DATE_FMT: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.ENGLISH)
 
 @Composable
 fun SettingsScreen(
@@ -65,7 +70,9 @@ fun SettingsScreen(
     fun captureHome() {
         LocationGate.captureCurrent(context) { lat, lng ->
             homeMsg = if (lat != null && lng != null) {
-                settings.setHome(lat, lng); "Home location saved."
+                settings.setHome(lat, lng)
+                HomeGeofence.sync(context)
+                "Home location saved."
             } else {
                 "Couldn't get a location fix — go outdoors and try again."
             }
@@ -81,12 +88,22 @@ fun SettingsScreen(
     }
     val bgLocationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { locVersion++ }
+    ) {
+        HomeGeofence.sync(context)
+        locVersion++
+    }
 
     val canExact = AppPermissions.canScheduleExactAlarms(context)
     val ignoringBattery = AppPermissions.isIgnoringBatteryOptimizations(context)
     val notificationsOn = AppPermissions.areNotificationsEnabled(context)
     val range = store.dateRange()
+    val appVersion = remember {
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     @Suppress("UNUSED_EXPRESSION") locVersion
     val hasLocation = AppPermissions.hasLocationPermission(context)
@@ -119,7 +136,8 @@ fun SettingsScreen(
 
                 SectionCard("Away from home", "خارج المنزل") {
                     ToggleRow("Mute azan when away (> 1 km)", gateEnabled) {
-                        gateEnabled = it; settings.locationGateEnabled = it; locVersion++
+                        gateEnabled = it; settings.locationGateEnabled = it
+                        HomeGeofence.sync(context); locVersion++
                     }
                     Spacer(Modifier.height(6.dp))
                     StatusLine("Home location set", homeSet)
@@ -146,7 +164,11 @@ fun SettingsScreen(
                     if (homeSet) {
                         Spacer(Modifier.height(8.dp))
                         OutlinedButton(
-                            onClick = { settings.clearHome(); homeMsg = "Home cleared."; locVersion++ },
+                            onClick = {
+                                settings.clearHome()
+                                HomeGeofence.sync(context)
+                                homeMsg = "Home cleared."; locVersion++
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
                         ) { Text("Clear home") }
@@ -168,9 +190,11 @@ fun SettingsScreen(
                     Spacer(Modifier.height(8.dp))
                     Text(
                         "Within 1 km of home the azan plays normally. Farther away you get a silent " +
-                            "notification instead, and it resumes automatically when you return. For this " +
-                            "to work in the background, set Location to \"Allow all the time\". Your location " +
-                            "is only checked at prayer times and never leaves the phone.",
+                            "reminder instead, and the azan resumes automatically when you return. " +
+                            "Android itself watches the home zone (a battery-friendly geofence), so the " +
+                            "app never tracks you — it is only told when you leave or come home, and " +
+                            "nothing ever leaves your phone. \"Allow all the time\" is required by " +
+                            "Android for the geofence to work.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -193,7 +217,7 @@ fun SettingsScreen(
                         onClick = onOpenNotificationSettings,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
-                    ) { Text("Open notification settings (allow / disable)") }
+                    ) { Text("Notification settings") }
                 }
 
                 Spacer(Modifier.height(12.dp))
@@ -229,32 +253,58 @@ fun SettingsScreen(
 
                 Spacer(Modifier.height(12.dp))
 
-                SectionCard("Test", "تجربة") {
-                    Button(
+                SectionCard("Azan sound", "صوت الأذان") {
+                    Text(
+                        "Listen to the azan exactly as it will play at prayer time.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
                         onClick = { onTestAzan(Prayer.DHUHR) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
-                    ) { Text(if (playing == Prayer.DHUHR.key) "Stop standard azan" else "Play standard azan") }
+                    ) { Text(if (playing == Prayer.DHUHR.key) "Stop" else "Preview the azan") }
                     Spacer(Modifier.height(8.dp))
-                    Button(
+                    OutlinedButton(
                         onClick = { onTestAzan(Prayer.FAJR) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
-                    ) { Text(if (playing == Prayer.FAJR.key) "Stop Fajr azan" else "Play Fajr azan") }
+                    ) { Text(if (playing == Prayer.FAJR.key) "Stop" else "Preview the Fajr azan") }
                 }
 
                 Spacer(Modifier.height(12.dp))
 
-                SectionCard("Data", "البيانات") {
+                SectionCard("Prayer times", "مواقيت الصلاة") {
                     Text(
-                        "Stored days: ${store.count()}" +
-                            (range?.let { "\nFrom ${it.first} to ${it.second}" } ?: ""),
+                        range?.let {
+                            "Times for ${store.count()} days are saved, " +
+                                "until ${it.second.format(SHEET_DATE_FMT)}."
+                        } ?: "No prayer times saved yet — scan this month's timetable.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        "Past months are cleared automatically. Scan a new sheet to add the next " +
-                            "month. Replace res/raw/azan.mp3 and azan_fajr.mp3 with your own recordings.",
+                        "Past months are removed automatically. When the mosque posts a new " +
+                            "timetable, scan it from the home screen.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                SectionCard("About", "حول التطبيق") {
+                    Text(
+                        "Azan Ulm${appVersion?.let { " · version $it" } ?: ""}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Prayer times of the Al-Salam Mosque (Friedensmoschee) in Ulm. " +
+                            "The app works completely offline — it has no internet access and " +
+                            "your data never leaves the phone.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

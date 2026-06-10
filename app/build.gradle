@@ -64,4 +64,10 @@ dependencies {
 
     // On-device OCR (works offline)
     implementation 'com.google.mlkit:text-recognition:16.0.0'
+
+    // Geofencing for the "mute azan when away" feature: the system watches the
+    // home zone and only wakes the app on enter/exit, so the app itself never
+    // polls location in the background (avoids the OS "this app checked your
+    // location" reminders).
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
 }

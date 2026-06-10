@@ -37,11 +37,37 @@ class Settings(context: Context) {
 
     fun clearHome() = sp.edit().remove(KEY_HOME_LAT).remove(KEY_HOME_LNG).apply()
 
+    /** True while a home geofence is registered with Play services. */
+    var geofenceActive: Boolean
+        get() = sp.getBoolean(KEY_GEOFENCE_ACTIVE, false)
+        set(v) = sp.edit().putBoolean(KEY_GEOFENCE_ACTIVE, v).apply()
+
+    /**
+     * Last home-zone state reported by the geofence: true = away, false = at home,
+     * null = no transition seen yet (treated as at-home so the azan still plays).
+     */
+    val awayState: Boolean?
+        get() = when (sp.getInt(KEY_AWAY_STATE, AWAY_UNKNOWN)) {
+            AWAY_YES -> true
+            AWAY_NO -> false
+            else -> null
+        }
+
+    fun setAwayState(away: Boolean) =
+        sp.edit().putInt(KEY_AWAY_STATE, if (away) AWAY_YES else AWAY_NO).apply()
+
+    fun clearAwayState() = sp.edit().remove(KEY_AWAY_STATE).apply()
+
     companion object {
         const val RADIUS_METERS = 1000f
         private const val KEY_ENABLED = "enabled"
         private const val KEY_LOC_GATE = "loc_gate"
         private const val KEY_HOME_LAT = "home_lat"
         private const val KEY_HOME_LNG = "home_lng"
+        private const val KEY_GEOFENCE_ACTIVE = "geofence_active"
+        private const val KEY_AWAY_STATE = "away_state"
+        private const val AWAY_UNKNOWN = -1
+        private const val AWAY_NO = 0
+        private const val AWAY_YES = 1
     }
 }

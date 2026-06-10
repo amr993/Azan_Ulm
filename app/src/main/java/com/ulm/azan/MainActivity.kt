@@ -22,6 +22,7 @@ import com.ulm.azan.alarm.AzanService
 import com.ulm.azan.alarm.PrayerScheduler
 import com.ulm.azan.data.Prayer
 import com.ulm.azan.data.PrayerStore
+import com.ulm.azan.location.HomeGeofence
 import com.ulm.azan.ocr.ParsedRow
 import com.ulm.azan.ocr.PrayerOcrParser
 import com.ulm.azan.ui.AzanTheme
@@ -58,6 +59,8 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         PrayerScheduler.rescheduleAll(this)
+        // Self-heals the geofence if permissions changed in system settings.
+        HomeGeofence.sync(this)
     }
 
     private fun runOcr(
@@ -171,8 +174,7 @@ class MainActivity : ComponentActivity() {
                 onOpenSettings = { screen = Screen.SETTINGS },
                 onRequestNotifications = {
                     notifLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                },
-                onTestAzan = { prayer -> testAzan(prayer) }
+                }
             )
 
             Screen.REVIEW -> ReviewScreen(
@@ -187,7 +189,8 @@ class MainActivity : ComponentActivity() {
                         store.purgeOldMonths()
                         PrayerScheduler.rescheduleAll(this)
                         dataVersion++
-                        message = "Saved ${days.size} day(s) and updated alarms."
+                        message = "Saved ${days.size} ${if (days.size == 1) "day" else "days"} " +
+                            "of prayer times. The azan is scheduled."
                     }
                     screen = Screen.HOME
                 }

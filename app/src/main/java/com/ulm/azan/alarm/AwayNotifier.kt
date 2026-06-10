@@ -29,7 +29,7 @@ object AwayNotifier {
         val notif = NotificationCompat.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle("${prayer.displayName}$timeStr")
-            .setContentText("Azan muted — you are away from home.")
+            .setContentText("It is time to pray — the azan stayed silent because you are out.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)

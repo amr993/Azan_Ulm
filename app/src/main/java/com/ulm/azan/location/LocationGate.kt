@@ -11,7 +11,12 @@ import com.ulm.azan.util.AppPermissions
 
 /**
  * Decides whether the azan should play based on distance from the stored home.
- * Uses only the device's last-known location (no continuous tracking, no network).
+ *
+ * Preferred path: read the cached home-zone state maintained by [HomeGeofence] —
+ * the system tracks enter/exit, so the app performs NO location access at prayer
+ * time (and the OS never flags it for background location checks).
+ * Fallback (no Play services): a single passive last-known-location read.
+ *
  * Fails OPEN: if the feature is off, home is unset, permission is missing, or the
  * location is unknown, it reports not-away so the azan plays normally.
  */
@@ -24,6 +29,10 @@ object LocationGate {
         if (!settings.locationGateEnabled) return Result(false, true, null)
         val home = settings.homeLatLng() ?: return Result(false, false, null)
         if (!AppPermissions.hasLocationPermission(context)) return Result(false, false, null)
+        if (settings.geofenceActive) {
+            val away = settings.awayState
+            return Result(away == true, away != null, null)
+        }
         val loc = bestLastKnown(context) ?: return Result(false, false, null)
         val res = FloatArray(1)
         Location.distanceBetween(home.first, home.second, loc.latitude, loc.longitude, res)

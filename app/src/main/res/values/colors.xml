@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#06443A</color>
+
+    <!-- Widget brand palette (matches ui/Theme.kt) -->
+    <color name="widget_emerald">#0B6B57</color>
+    <color name="widget_emerald_deep">#06443A</color>
+    <color name="widget_gold">#C9A24B</color>
+    <color name="widget_gold_light">#E6CF92</color>
+    <color name="widget_text">#FFFFFF</color>
+    <color name="widget_text_soft">#D9E7E1</color>
 </resources>

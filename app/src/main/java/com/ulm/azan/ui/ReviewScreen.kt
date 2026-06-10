@@ -161,7 +161,10 @@ fun ReviewScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text("Save ${editRows.size} day(s) & schedule azan")
+                        Text(
+                            "Save ${editRows.size} ${if (editRows.size == 1) "day" else "days"} " +
+                                "& schedule azan"
+                        )
                     }
                     Spacer(Modifier.height(8.dp))
                     OutlinedButton(

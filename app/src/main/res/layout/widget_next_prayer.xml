@@ -5,35 +5,68 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_background"
-    android:padding="6dp"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="10dp"
     android:gravity="center">
+
+    <LinearLayout
+        android:id="@+id/widget_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="13dp"
+            android:layout_height="13dp"
+            android:src="@drawable/ic_crescent_star"
+            android:tint="@color/widget_gold_light"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:id="@+id/widget_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="@string/widget_next_prayer"
+            android:textColor="@color/widget_gold_light"
+            android:textSize="10sp"
+            android:letterSpacing="0.14"
+            android:textAllCaps="true"
+            android:maxLines="1" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/widget_prayer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
         android:maxLines="1"
         android:ellipsize="end"
         android:text="—"
-        android:textColor="#FFFFFF"
-        android:textSize="12sp" />
+        android:textColor="@color/widget_text"
+        android:textSize="17sp"
+        android:fontFamily="sans-serif-medium" />
 
     <Chronometer
         android:id="@+id/widget_countdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:maxLines="1"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold" />
+        android:textColor="@color/widget_gold_light"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium" />
 
     <TextView
         android:id="@+id/widget_empty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxLines="1"
-        android:text="Open app"
-        android:textColor="#EEEEEE"
-        android:textSize="11sp"
+        android:layout_marginTop="2dp"
+        android:maxLines="2"
+        android:gravity="center"
+        android:text="@string/widget_empty_hint"
+        android:textColor="@color/widget_text_soft"
+        android:textSize="12sp"
         android:visibility="gone" />
 </LinearLayout>
