@@ -5,6 +5,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.time.LocalDate
+import java.time.YearMonth
 
 /**
  * Persists prayer times as a JSON file in internal storage.
@@ -51,6 +52,19 @@ class PrayerStore(private val context: Context) {
         val all = loadAll().toMutableMap()
         newDays.forEach { all[it.date] = it }
         saveAll(all.values)
+    }
+
+    /**
+     * Remove every stored day that belongs to a month before [reference]'s month.
+     * Keeps the current month and any future months. Returns how many were removed.
+     */
+    fun purgeOldMonths(reference: LocalDate = LocalDate.now()): Int {
+        val currentMonth = YearMonth.from(reference)
+        val all = loadAll()
+        val kept = all.values.filter { YearMonth.from(it.date) >= currentMonth }
+        val removed = all.size - kept.size
+        if (removed > 0) saveAll(kept)
+        return removed
     }
 
     fun forDate(date: LocalDate): DayTimes? = loadAll()[date]

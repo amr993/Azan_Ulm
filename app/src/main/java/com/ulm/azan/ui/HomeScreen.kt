@@ -1,5 +1,8 @@
 package com.ulm.azan.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,13 +11,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -60,7 +64,6 @@ fun HomeScreen(
     onScanCamera: () -> Unit,
     onOpenSettings: () -> Unit,
     onRequestNotifications: () -> Unit,
-    onTestAzan: (Prayer) -> Unit,
 ) {
     val context = LocalContext.current
     val settings = remember { Settings(context) }
@@ -87,34 +90,23 @@ fun HomeScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // ---- Header ----
-            Surface(color = MaterialTheme.colorScheme.primary) {
-                Column(Modifier.fillMaxWidth().padding(20.dp)) {
-                    Text(
-                        "Azan Ulm",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Al-Salam (Friedens) Moschee — Ulm",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
+            BrandHeader(
+                title = "Al-Salam Mosque",
+                arabic = "مسجد السلام",
+                subtitle = "Friedensmoschee · Ulm"
+            )
 
             Column(Modifier.padding(16.dp)) {
 
                 if (loading) {
-                    Card(Modifier.fillMaxWidth()) {
+                    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
                         Row(
                             Modifier.fillMaxWidth().padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CircularProgressIndicator(Modifier.height(24.dp))
-                            Spacer(Modifier.fillMaxWidth(0.05f))
-                            Text("  Reading the image…")
+                            CircularProgressIndicator(Modifier.height(22.dp))
+                            Spacer(Modifier.width(14.dp))
+                            Text("Reading the image…")
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -123,12 +115,13 @@ fun HomeScreen(
                 message?.let {
                     Card(
                         Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
                         )
                     ) {
-                        Column(Modifier.padding(12.dp)) {
-                            Text(it, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Column(Modifier.padding(14.dp)) {
+                            Text(it, color = MaterialTheme.colorScheme.onSecondaryContainer)
                             TextButton(onClick = onDismissMessage, modifier = Modifier.align(Alignment.End)) {
                                 Text("Dismiss")
                             }
@@ -137,47 +130,63 @@ fun HomeScreen(
                     Spacer(Modifier.height(12.dp))
                 }
 
-                // ---- Next prayer banner ----
+                // ---- Next prayer (gold-framed) ----
                 if (next != null) {
                     val (p, dt) = next
                     val remaining = Duration.between(now, dt)
                     Card(
-                        Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.5.dp, Brand.Gold, RoundedCornerShape(20.dp)),
+                        shape = RoundedCornerShape(20.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     ) {
-                        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                            Text(
-                                "Next prayer",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                        Column(
+                            Modifier.fillMaxWidth().padding(18.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                StarBullet(12)
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    "NEXT PRAYER",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                StarBullet(12)
+                            }
+                            Spacer(Modifier.height(6.dp))
                             Text(
                                 "${p.displayName} · ${dt.toLocalTime().format(TIME_FMT)}",
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
+                            Spacer(Modifier.height(2.dp))
                             Text(
                                 "in ${formatDuration(remaining)}",
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
                 }
 
                 // ---- Today's times ----
-                Card(Modifier.fillMaxWidth()) {
+                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
                     Column(Modifier.padding(16.dp)) {
                         Text(
-                            "Today — ${today.format(DATE_FMT)}",
+                            "Today · ${today.format(DATE_FMT)}",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(Modifier.height(8.dp))
+                        OrnamentalDivider()
+                        Spacer(Modifier.height(6.dp))
                         if (todayTimes == null) {
                             Text(
                                 "No times stored for today. Scan this month's sheet to add them.",
@@ -185,25 +194,32 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
-                            for (p in Prayer.columns) {
+                            val cols = Prayer.columns
+                            for ((index, p) in cols.withIndex()) {
                                 val t = todayTimes.time(p) ?: continue
                                 val isNext = next?.first == p &&
                                     next.second.toLocalDate() == today
                                 val muted = p != Prayer.SUNRISE && !settings.isPrayerEnabled(p)
                                 Row(
-                                    Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                    Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(
-                                        buildString {
-                                            append(p.displayName)
-                                            if (p == Prayer.SUNRISE) append("  (no azan)")
-                                            else if (muted) append("  (muted)")
-                                        },
-                                        fontWeight = if (isNext) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isNext) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurface
-                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        StarBullet(if (isNext) 11 else 8,
+                                            tint = if (isNext) MaterialTheme.colorScheme.primary else Brand.Gold)
+                                        Spacer(Modifier.width(10.dp))
+                                        Text(
+                                            buildString {
+                                                append(p.displayName)
+                                                if (p == Prayer.SUNRISE) append("  · no azan")
+                                                else if (muted) append("  · muted")
+                                            },
+                                            fontWeight = if (isNext) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isNext) MaterialTheme.colorScheme.primary
+                                            else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                     Text(
                                         t.format(TIME_FMT),
                                         fontWeight = if (isNext) FontWeight.Bold else FontWeight.Normal,
@@ -211,118 +227,115 @@ fun HomeScreen(
                                         else MaterialTheme.colorScheme.onSurface
                                     )
                                 }
-                                HorizontalDivider()
+                                if (index < cols.size - 1) {
+                                    Box(
+                                        Modifier.fillMaxWidth().height(1.dp)
+                                            .background(Brand.Gold.copy(alpha = 0.20f))
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(14.dp))
 
-                // ---- Permission prompts ----
                 if (!canExact) {
                     WarningCard(
-                        text = "Exact alarms are off. Without them the azan may be delayed. " +
-                            "Open Settings to allow exact alarms.",
-                        actionLabel = "Fix in Settings",
-                        onAction = onOpenSettings
+                        "Exact alarms are off — the azan may be delayed. Open Settings to allow them.",
+                        "Fix in Settings", onOpenSettings
                     )
                 }
                 if (AppPermissions.needsNotificationPermission()) {
                     WarningCard(
-                        text = "Allow notifications so the azan banner can show.",
-                        actionLabel = "Allow notifications",
-                        onAction = onRequestNotifications
+                        "Allow notifications so the azan banner can show.",
+                        "Allow notifications", onRequestNotifications
                     )
                 }
                 if (!ignoringBattery) {
                     WarningCard(
-                        text = "Battery optimization may stop alarms when the phone sleeps. " +
-                            "Exempt this app for reliable azan.",
-                        actionLabel = "Fix in Settings",
-                        onAction = onOpenSettings
+                        "Battery optimization may delay alarms. Exempt this app for reliable azan.",
+                        "Fix in Settings", onOpenSettings
                     )
                 }
 
-                // ---- Actions ----
                 Spacer(Modifier.height(4.dp))
-                Button(onClick = onScanGallery, modifier = Modifier.fillMaxWidth()) {
-                    Text("Scan a sheet from gallery")
-                }
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = onScanCamera, modifier = Modifier.fillMaxWidth()) {
-                    Text("Take a photo of the sheet")
-                }
-                Spacer(Modifier.height(8.dp))
-                OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
-                    Text("Settings")
-                }
-                Spacer(Modifier.height(8.dp))
-                TextButton(
-                    onClick = { onTestAzan(Prayer.DHUHR) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Test azan now")
-                }
-
-                Spacer(Modifier.height(16.dp))
                 Text(
-                    "Stored: ${all.size} day(s)" + (store.dateRange()?.let {
-                        " (${it.first.format(TIME_RANGE)} – ${it.second.format(TIME_RANGE)})"
-                    } ?: ""),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    "Monthly timetable",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onScanGallery,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                ) { Text("Scan the timetable from gallery") }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onScanCamera,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                ) { Text("Photograph the timetable") }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onOpenSettings,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                ) { Text("Settings") }
+
+                store.dateRange()?.let { range ->
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Prayer times available until ${range.second.format(DATE_FMT)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
                 Spacer(Modifier.height(24.dp))
             }
         }
     }
 }
 
-private val TIME_RANGE: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH)
-
 @Composable
 private fun WarningCard(text: String, actionLabel: String, onAction: () -> Unit) {
     Card(
         Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondary
-        )
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
     ) {
-        Column(Modifier.padding(12.dp)) {
-            Text(text, color = MaterialTheme.colorScheme.onSecondary)
+        Column(Modifier.padding(14.dp)) {
+            Text(text, color = MaterialTheme.colorScheme.onSecondaryContainer)
             TextButton(onClick = onAction, modifier = Modifier.align(Alignment.End)) {
-                Text(actionLabel, color = MaterialTheme.colorScheme.onSecondary)
+                Text(actionLabel, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
         }
     }
     Spacer(Modifier.height(12.dp))
 }
 
-/** Finds the next enabled azan prayer at or after [now], scanning up to 2 days ahead. */
 private fun computeNextAzan(
     all: Map<LocalDate, DayTimes>,
     settings: Settings,
     now: LocalDateTime
 ): Pair<Prayer, LocalDateTime>? {
     if (!settings.enabled) return null
-    var best: Pair<Prayer, LocalDateTime>? = null
     for (addDays in 0..2L) {
         val date = now.toLocalDate().plusDays(addDays)
         val day = all[date] ?: continue
+        var best: Pair<Prayer, LocalDateTime>? = null
         for (p in Prayer.azanPrayers) {
             if (!settings.isPrayerEnabled(p)) continue
             val t = day.time(p) ?: continue
             val dt = LocalDateTime.of(date, t)
-            if (dt.isAfter(now) && (best == null || dt.isBefore(best!!.second))) {
-                best = p to dt
-            }
+            if (dt.isAfter(now) && (best == null || dt.isBefore(best!!.second))) best = p to dt
         }
-        if (best != null) break // earliest day with a hit wins
+        if (best != null) return best
     }
-    return best
+    return null
 }
 
 private fun formatDuration(d: Duration): String {

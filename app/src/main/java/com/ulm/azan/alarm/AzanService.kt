@@ -24,6 +24,10 @@ import com.ulm.azan.data.Prayer
 /**
  * Foreground service that plays the azan over the alarm audio stream
  * (so it sounds even on silent / Do-Not-Disturb), with a Stop action.
+ *
+ * Battery: the service only lives for the length of the azan. It uses
+ * START_NOT_STICKY so the system never re-creates it after the audio ends or
+ * if it is killed, and the wake lock is released as soon as playback stops.
  */
 class AzanService : Service() {
 
@@ -36,15 +40,16 @@ class AzanService : Service() {
         when (intent?.action) {
             ACTION_STOP -> {
                 stopSelf()
-                return START_NOT_STICKY
             }
             else -> {
                 val prayer = Prayer.fromKey(intent?.getStringExtra(EXTRA_PRAYER)) ?: Prayer.DHUHR
+                AzanPlaybackState.setPlaying(prayer.key)
                 startInForeground(prayer)
                 playAzan(prayer)
             }
         }
-        return START_STICKY
+        // Do not recreate this short-lived service if the system kills it.
+        return START_NOT_STICKY
     }
 
     private fun startInForeground(prayer: Prayer) {
@@ -96,7 +101,8 @@ class AzanService : Service() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AzanUlm:azan").apply {
             setReferenceCounted(false)
-            acquire(5 * 60 * 1000L)
+            // Safety cap; released earlier in onDestroy when the azan ends.
+            acquire(3 * 60 * 1000L)
         }
     }
 
@@ -139,6 +145,7 @@ class AzanService : Service() {
     }
 
     override fun onDestroy() {
+        AzanPlaybackState.setPlaying(null)
         player?.release()
         player = null
         wakeLock?.let { if (it.isHeld) it.release() }

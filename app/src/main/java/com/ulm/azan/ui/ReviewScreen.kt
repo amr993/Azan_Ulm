@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -82,29 +83,17 @@ fun ReviewScreen(
                     val opts = BitmapFactory.Options().apply { inSampleSize = 4 }
                     BitmapFactory.decodeStream(stream, null, opts)?.asImageBitmap()
                 }
-            } catch (_: Exception) {
-                null
-            }
+            } catch (_: Exception) { null }
         }
     }
 
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize()) {
-            Surface(color = MaterialTheme.colorScheme.primary) {
-                Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(
-                        "Review scanned times",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "Check each day, fix anything wrong, then Save. Leave a field empty to skip it.",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
+            BrandHeader(
+                title = "Review times",
+                arabic = "مراجعة الأوقات",
+                subtitle = "Check each day, fix anything, then Save. Empty fields are skipped."
+            )
 
             LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 item { Spacer(Modifier.height(12.dp)) }
@@ -125,6 +114,7 @@ fun ReviewScreen(
                     item {
                         Card(
                             Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer
                             )
@@ -142,8 +132,8 @@ fun ReviewScreen(
                 if (editRows.isEmpty()) {
                     item {
                         Text(
-                            "No prayer times were detected in this image. " +
-                                "Go back and try a clearer, straight-on photo of the table.",
+                            "No prayer times were detected. Go back and try a clearer, " +
+                                "straight-on photo of the table.",
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(Modifier.height(16.dp))
@@ -168,14 +158,20 @@ fun ReviewScreen(
                                 onSave(result)
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
                     ) {
-                        Text("Save ${editRows.size} day(s) & schedule azan")
+                        Text(
+                            "Save ${editRows.size} ${if (editRows.size == 1) "day" else "days"} " +
+                                "& schedule azan"
+                        )
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
-                        Text("Cancel")
-                    }
+                    OutlinedButton(
+                        onClick = onCancel,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    ) { Text("Cancel") }
                     Spacer(Modifier.height(24.dp))
                 }
             }
@@ -190,16 +186,20 @@ private fun DayCard(row: EditRow) {
         else MaterialTheme.colorScheme.secondaryContainer
     Card(
         Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = container)
     ) {
         Column(Modifier.padding(12.dp)) {
-            Text(
-                row.date.format(ROW_DATE) + if (!row.complete) "  ⚠ check this row" else "",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
+            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                StarBullet(10)
+                Spacer(Modifier.height(0.dp))
+                Text(
+                    "  " + row.date.format(ROW_DATE) + if (!row.complete) "  · check this row" else "",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
             Spacer(Modifier.height(8.dp))
-            // Two columns of fields.
             val cols = Prayer.columns
             var i = 0
             while (i < cols.size) {
@@ -232,7 +232,6 @@ private fun TimeField(row: EditRow, p: Prayer, modifier: Modifier) {
     )
 }
 
-/** Returns null if any field is malformed; otherwise the list of days to save. */
 private fun buildDays(editRows: List<EditRow>): List<DayTimes>? {
     val out = ArrayList<DayTimes>()
     for (row in editRows) {
@@ -250,7 +249,5 @@ private fun buildDays(editRows: List<EditRow>): List<DayTimes>? {
 
 private fun normalize(s: String): String {
     val parts = s.split(":")
-    val h = parts[0].toInt()
-    val mn = parts[1].toInt()
-    return "%02d:%02d".format(h, mn)
+    return "%02d:%02d".format(parts[0].toInt(), parts[1].toInt())
 }
