@@ -17,40 +17,50 @@ import androidx.core.content.FileProvider
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.ulm.azan.alarm.AzanPlaybackState
 import com.ulm.azan.alarm.AzanService
 import com.ulm.azan.alarm.PrayerScheduler
 import com.ulm.azan.data.Prayer
 import com.ulm.azan.data.PrayerStore
+import com.ulm.azan.location.HomeGeofence
 import com.ulm.azan.ocr.ParsedRow
 import com.ulm.azan.ocr.PrayerOcrParser
 import com.ulm.azan.ui.AzanTheme
 import com.ulm.azan.ui.HomeScreen
 import com.ulm.azan.ui.ReviewScreen
 import com.ulm.azan.ui.SettingsScreen
+import com.ulm.azan.util.AppPermissions
 import java.io.File
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 enum class Screen { HOME, REVIEW, SETTINGS }
+
+private val MONTH_FMT: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)
 
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Seed the bundled month and arm alarms every time the app opens.
-        PrayerStore(this).ensureSeeded()
+        val store = PrayerStore(this)
+        store.ensureSeeded()
+        store.purgeOldMonths()          // drop any months that are already in the past
         PrayerScheduler.rescheduleAll(this)
 
         setContent {
-            AzanTheme {
-                AppRoot()
-            }
+            AzanTheme { AppRoot() }
         }
     }
 
     override fun onResume() {
         super.onResume()
-        // Keep alarms fresh if the user changed system permissions while away.
         PrayerScheduler.rescheduleAll(this)
+        // Self-heals the geofence if permissions changed in system settings.
+        HomeGeofence.sync(this)
     }
 
     private fun runOcr(
@@ -75,6 +85,23 @@ class MainActivity : ComponentActivity() {
         return FileProvider.getUriForFile(this, "$packageName.fileprovider", file)
     }
 
+    /** True if even the latest date in the set is before this month started. */
+    private fun isOldMonth(dates: List<LocalDate>): Boolean {
+        val maxDate = dates.maxOrNull() ?: return false
+        return maxDate.isBefore(LocalDate.now().withDayOfMonth(1))
+    }
+
+    private fun testAzan(prayer: Prayer) {
+        val intent = Intent(this, AzanService::class.java)
+        if (AzanPlaybackState.playing.value == prayer.key) {
+            intent.action = AzanService.ACTION_STOP
+        } else {
+            intent.action = AzanService.ACTION_PLAY
+            intent.putExtra(AzanService.EXTRA_PRAYER, prayer.key)
+        }
+        ContextCompat.startForegroundService(this, intent)
+    }
+
     @androidx.compose.runtime.Composable
     private fun AppRoot() {
         val store = remember { PrayerStore(this).also { it.ensureSeeded() } }
@@ -85,51 +112,46 @@ class MainActivity : ComponentActivity() {
         var loading by remember { mutableStateOf(false) }
         var message by remember { mutableStateOf<String?>(null) }
         var dataVersion by remember { mutableIntStateOf(0) }
-
-        // Permission status, recomputed whenever dataVersion bumps (cheap).
         var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
 
         val notifLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { dataVersion++ }
 
+        fun handleScan(uri: Uri) {
+            scannedImage = uri
+            loading = true
+            message = null
+            runOcr(uri, onResult = { rows ->
+                loading = false
+                when {
+                    rows.isEmpty() ->
+                        message = "No prayer times were detected. Try a clearer, straight-on photo."
+                    isOldMonth(rows.map { it.date }) -> {
+                        val ym = YearMonth.from(rows.maxOf { it.date })
+                        message = "This sheet is for ${ym.format(MONTH_FMT)}, an older month, " +
+                            "so it was not saved. Please scan the current month or a future one."
+                    }
+                    else -> {
+                        parsed = rows
+                        screen = Screen.REVIEW
+                    }
+                }
+            }, onError = {
+                loading = false
+                message = "Scan failed: $it"
+            })
+        }
+
         val galleryLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
             ActivityResultContracts.PickVisualMedia()
-        ) { uri ->
-            if (uri != null) {
-                scannedImage = uri
-                loading = true
-                message = null
-                runOcr(uri, onResult = {
-                    parsed = it
-                    loading = false
-                    screen = Screen.REVIEW
-                    if (it.isEmpty()) message = "No prayer times were detected. Try a clearer photo."
-                }, onError = {
-                    loading = false
-                    message = "Scan failed: $it"
-                })
-            }
-        }
+        ) { uri -> if (uri != null) handleScan(uri) }
 
         val cameraLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
             ActivityResultContracts.TakePicture()
         ) { success ->
             val uri = pendingCameraUri
-            if (success && uri != null) {
-                scannedImage = uri
-                loading = true
-                message = null
-                runOcr(uri, onResult = {
-                    parsed = it
-                    loading = false
-                    screen = Screen.REVIEW
-                    if (it.isEmpty()) message = "No prayer times were detected. Try a clearer photo."
-                }, onError = {
-                    loading = false
-                    message = "Scan failed: $it"
-                })
-            }
+            if (success && uri != null) handleScan(uri)
         }
 
         when (screen) {
@@ -152,8 +174,7 @@ class MainActivity : ComponentActivity() {
                 onOpenSettings = { screen = Screen.SETTINGS },
                 onRequestNotifications = {
                     notifLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                },
-                onTestAzan = { prayer -> testAzan(prayer) }
+                }
             )
 
             Screen.REVIEW -> ReviewScreen(
@@ -161,10 +182,16 @@ class MainActivity : ComponentActivity() {
                 imageUri = scannedImage,
                 onCancel = { screen = Screen.HOME },
                 onSave = { days ->
-                    store.merge(days)
-                    PrayerScheduler.rescheduleAll(this)
-                    dataVersion++
-                    message = "Saved ${days.size} day(s) and updated alarms."
+                    if (isOldMonth(days.map { it.date })) {
+                        message = "Those dates are from an older month, so nothing was saved."
+                    } else {
+                        store.merge(days)
+                        store.purgeOldMonths()
+                        PrayerScheduler.rescheduleAll(this)
+                        dataVersion++
+                        message = "Saved ${days.size} ${if (days.size == 1) "day" else "days"} " +
+                            "of prayer times. The azan is scheduled."
+                    }
                     screen = Screen.HOME
                 }
             )
@@ -179,16 +206,11 @@ class MainActivity : ComponentActivity() {
                 onTestAzan = { prayer -> testAzan(prayer) },
                 onRequestNotifications = {
                     notifLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                },
+                onOpenNotificationSettings = {
+                    startActivity(AppPermissions.appNotificationSettingsIntent(this))
                 }
             )
         }
-    }
-
-    private fun testAzan(prayer: Prayer) {
-        val svc = Intent(this, AzanService::class.java).apply {
-            action = AzanService.ACTION_PLAY
-            putExtra(AzanService.EXTRA_PRAYER, prayer.key)
-        }
-        ContextCompat.startForegroundService(this, svc)
     }
 }

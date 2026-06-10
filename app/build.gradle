@@ -20,7 +20,15 @@ android {
 
     buildTypes {
         release {
+            // Signed with the debug key so it side-loads without extra setup,
+            // but it is NOT debuggable (unlike the debug APK), which closes off
+            // ADB inspection/injection of the app's private data.
+            signingConfig signingConfigs.debug
+            debuggable false
+            // Left OFF to guarantee a working build. To further harden against
+            // reverse-engineering, set both to true (R8 code shrink/obfuscate).
             minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -56,4 +64,10 @@ dependencies {
 
     // On-device OCR (works offline)
     implementation 'com.google.mlkit:text-recognition:16.0.0'
+
+    // Geofencing for the "mute azan when away" feature: the system watches the
+    // home zone and only wakes the app on enter/exit, so the app itself never
+    // polls location in the background (avoids the OS "this app checked your
+    // location" reminders).
+    implementation 'com.google.android.gms:play-services-location:21.3.0'
 }

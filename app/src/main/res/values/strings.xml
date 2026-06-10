@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Azan Ulm</string>
+    <string name="widget_description">Shows the next prayer and a live countdown.</string>
+    <string name="widget_next_prayer">Next prayer</string>
+    <string name="widget_empty_hint">Open the app</string>
 </resources>

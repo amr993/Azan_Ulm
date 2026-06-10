@@ -8,6 +8,7 @@ import android.os.Build
 import com.ulm.azan.data.Prayer
 import com.ulm.azan.data.PrayerStore
 import com.ulm.azan.data.Settings
+import com.ulm.azan.widget.AzanWidgetProvider
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -16,7 +17,7 @@ import java.time.ZoneId
 /**
  * Schedules one exact alarm per enabled prayer (for its next upcoming occurrence)
  * plus a re-arm alarm just after midnight so the next day gets scheduled.
- * Call [rescheduleAll] on app open, on boot, and after every alarm fires.
+ * Call rescheduleAll on app open, on boot, and after every alarm fires.
  */
 object PrayerScheduler {
 
@@ -52,7 +53,6 @@ object PrayerScheduler {
         val am = alarmManager(context)
         val zone = ZoneId.systemDefault()
 
-        // Clear all prayer alarms first.
         for (p in Prayer.azanPrayers) am.cancel(prayerPendingIntent(context, p))
 
         if (settings.enabled) {
@@ -65,9 +65,9 @@ object PrayerScheduler {
             }
         }
         scheduleRearm(context, am, zone)
+        AzanWidgetProvider.updateAll(context)
     }
 
-    /** Find the soonest future date/time for [p] across today..+2 days. */
     private fun nextOccurrence(store: PrayerStore, p: Prayer, now: LocalDateTime): LocalDateTime? {
         for (addDays in 0..2L) {
             val date = now.toLocalDate().plusDays(addDays)
@@ -91,7 +91,6 @@ object PrayerScheduler {
             if (canExact) {
                 am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi)
             } else {
-                // Falls back to an inexact (but still doze-friendly) alarm.
                 am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMs, pi)
             }
         } catch (_: SecurityException) {
