@@ -66,6 +66,7 @@ fun SettingsScreen(
     var locVersion by remember { mutableIntStateOf(0) }
     var homeMsg by remember { mutableStateOf<String?>(null) }
     var gateEnabled by remember { mutableStateOf(settings.locationGateEnabled) }
+    var autoCalc by remember { mutableStateOf(settings.autoCalcEnabled) }
 
     fun captureHome() {
         LocationGate.captureCurrent(context) { lat, lng ->
@@ -276,6 +277,20 @@ fun SettingsScreen(
                 Spacer(Modifier.height(12.dp))
 
                 SectionCard("Prayer times", "مواقيت الصلاة") {
+                    ToggleRow("Calculate automatically (no scanning)", autoCalc) {
+                        autoCalc = it; settings.autoCalcEnabled = it; onChanged()
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    if (autoCalc) {
+                    Text(
+                        "Times are calculated on this phone using the mosque's own method " +
+                            "(Diyanet: Fajr 18°, standard Asr, Isha = Maghrib + 90 min, plus the " +
+                            "timetable's safety minutes). Checked against 350 days of Al-Salam " +
+                            "timetables: every time within 1 minute. No internet, no scanning.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    } else {
                     Text(
                         range?.let {
                             "Times for ${store.count()} days are saved, " +
@@ -290,6 +305,7 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    }
                 }
 
                 Spacer(Modifier.height(12.dp))

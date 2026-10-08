@@ -18,6 +18,11 @@ class Settings(context: Context) {
         get() = sp.getBoolean(KEY_LOC_GATE, false)
         set(v) = sp.edit().putBoolean(KEY_LOC_GATE, v).apply()
 
+    /** When true (default), times are calculated on-device; no monthly scanning needed. */
+    var autoCalcEnabled: Boolean
+        get() = sp.getBoolean(KEY_AUTO_CALC, true)
+        set(v) = sp.edit().putBoolean(KEY_AUTO_CALC, v).apply()
+
     val homeSet: Boolean
         get() = sp.contains(KEY_HOME_LAT) && sp.contains(KEY_HOME_LNG)
 
@@ -62,6 +67,7 @@ class Settings(context: Context) {
         const val RADIUS_METERS = 1000f
         private const val KEY_ENABLED = "enabled"
         private const val KEY_LOC_GATE = "loc_gate"
+        private const val KEY_AUTO_CALC = "auto_calc"
         private const val KEY_HOME_LAT = "home_lat"
         private const val KEY_HOME_LNG = "home_lng"
         private const val KEY_GEOFENCE_ACTIVE = "geofence_active"

@@ -8,6 +8,7 @@ import android.os.Build
 import com.ulm.azan.data.Prayer
 import com.ulm.azan.data.PrayerStore
 import com.ulm.azan.data.Settings
+import com.ulm.azan.data.Times
 import com.ulm.azan.widget.AzanWidgetProvider
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -48,7 +49,6 @@ object PrayerScheduler {
     }
 
     fun rescheduleAll(context: Context) {
-        val store = PrayerStore(context)
         val settings = Settings(context)
         val am = alarmManager(context)
         val zone = ZoneId.systemDefault()
@@ -59,7 +59,7 @@ object PrayerScheduler {
             val now = LocalDateTime.now()
             for (p in Prayer.azanPrayers) {
                 if (!settings.isPrayerEnabled(p)) continue
-                val dt = nextOccurrence(store, p, now) ?: continue
+                val dt = nextOccurrence(context, p, now) ?: continue
                 val triggerMs = dt.atZone(zone).toInstant().toEpochMilli()
                 setExact(am, context, triggerMs, prayerPendingIntent(context, p))
             }
@@ -68,10 +68,10 @@ object PrayerScheduler {
         AzanWidgetProvider.updateAll(context)
     }
 
-    private fun nextOccurrence(store: PrayerStore, p: Prayer, now: LocalDateTime): LocalDateTime? {
+    private fun nextOccurrence(context: Context, p: Prayer, now: LocalDateTime): LocalDateTime? {
         for (addDays in 0..2L) {
             val date = now.toLocalDate().plusDays(addDays)
-            val t = store.forDate(date)?.time(p) ?: continue
+            val t = Times.forDate(context, date)?.time(p) ?: continue
             val dt = LocalDateTime.of(date, t)
             if (dt.isAfter(now)) return dt
         }

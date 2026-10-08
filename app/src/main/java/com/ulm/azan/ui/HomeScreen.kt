@@ -67,7 +67,6 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     val settings = remember { Settings(context) }
-    val all = remember(dataVersion) { store.loadAll() }
 
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -78,6 +77,7 @@ fun HomeScreen(
     }
 
     val today = now.toLocalDate()
+    val all = remember(dataVersion, today) { com.ulm.azan.data.Times.window(context, today, 3) }
     val todayTimes = all[today]
     val next = computeNextAzan(all, settings, now)
 
@@ -258,6 +258,7 @@ fun HomeScreen(
                     )
                 }
 
+                if (!settings.autoCalcEnabled) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Monthly timetable",
@@ -278,13 +279,23 @@ fun HomeScreen(
                     shape = RoundedCornerShape(14.dp)
                 ) { Text("Photograph the timetable") }
                 Spacer(Modifier.height(8.dp))
+                }
                 OutlinedButton(
                     onClick = onOpenSettings,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 ) { Text("Settings") }
 
-                store.dateRange()?.let { range ->
+                if (settings.autoCalcEnabled) {
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        "Prayer times are calculated on this phone (the mosque's method)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else store.dateRange()?.let { range ->
                     Spacer(Modifier.height(16.dp))
                     Text(
                         "Prayer times available until ${range.second.format(DATE_FMT)}",

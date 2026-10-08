@@ -12,9 +12,10 @@ import android.widget.RemoteViews
 import com.ulm.azan.MainActivity
 import com.ulm.azan.R
 import com.ulm.azan.data.NextPrayer
-import com.ulm.azan.data.PrayerStore
+import com.ulm.azan.data.Times
 import com.ulm.azan.data.Settings
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -52,9 +53,8 @@ class AzanWidgetProvider : AppWidgetProvider() {
         private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
             val views = RemoteViews(context.packageName, R.layout.widget_next_prayer)
 
-            val store = PrayerStore(context)
             val settings = Settings(context)
-            val next = NextPrayer.compute(store.loadAll(), settings, LocalDateTime.now())
+            val next = NextPrayer.compute(Times.window(context, LocalDate.now(), 3), settings, LocalDateTime.now())
 
             if (next == null) {
                 views.setViewVisibility(R.id.widget_header, View.GONE)

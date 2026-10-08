@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import com.ulm.azan.data.Prayer
-import com.ulm.azan.data.PrayerStore
+import com.ulm.azan.data.Times
 import com.ulm.azan.location.LocationGate
 import java.time.LocalDate
 
@@ -17,7 +17,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 ?: Prayer.DHUHR
             val gate = LocationGate.evaluate(context)
             if (gate.away) {
-                val time = PrayerStore(context).forDate(LocalDate.now())?.time(prayer)
+                val time = Times.forDate(context, LocalDate.now())?.time(prayer)
                 AwayNotifier.notifyAway(context, prayer, time)
             } else {
                 val svc = Intent(context, AzanService::class.java).apply {
