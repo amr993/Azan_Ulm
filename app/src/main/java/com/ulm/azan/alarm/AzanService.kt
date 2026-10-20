@@ -13,7 +13,9 @@ import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
@@ -24,6 +26,8 @@ import com.ulm.azan.data.Prayer
 /**
  * Foreground service that plays the azan over the alarm audio stream
  * (so it sounds even on silent / Do-Not-Disturb), with a Stop action.
+ * Two seconds after the azan ends it plays the du'a (res/raw/doaa.mp3);
+ * Stop cancels both.
  *
  * Battery: the service only lives for the length of the azan. It uses
  * START_NOT_STICKY so the system never re-creates it after the audio ends or
@@ -33,6 +37,8 @@ class AzanService : Service() {
 
     private var player: MediaPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private val handler = Handler(Looper.getMainLooper())
+    private var pendingDua: Runnable? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -59,6 +65,7 @@ class AzanService : Service() {
     }
 
     private fun playAzan(prayer: Prayer) {
+        cancelPendingDua()
         acquireWakeLock()
         try {
             player?.release()
@@ -70,6 +77,38 @@ class AzanService : Service() {
                         .build()
                 )
                 setDataSource(this@AzanService, resolveAzanUri(prayer))
+                setOnCompletionListener { onAzanFinished() }
+                setOnErrorListener { _, _, _ -> stopSelf(); true }
+                setOnPreparedListener { it.start() }
+                prepareAsync()
+            }
+        } catch (_: Exception) {
+            stopSelf()
+        }
+    }
+
+    /** After the azan: pause DUA_DELAY_MS, then play the du'a (if bundled). */
+    private fun onAzanFinished() {
+        player?.release()
+        player = null
+        val duaId = resources.getIdentifier("doaa", "raw", packageName)
+        if (duaId == 0) { stopSelf(); return }
+        val r = Runnable { playDua(duaId) }
+        pendingDua = r
+        handler.postDelayed(r, DUA_DELAY_MS)
+    }
+
+    private fun playDua(resId: Int) {
+        pendingDua = null
+        try {
+            player = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build()
+                )
+                setDataSource(this@AzanService, Uri.parse("android.resource://$packageName/$resId"))
                 setOnCompletionListener { stopSelf() }
                 setOnErrorListener { _, _, _ -> stopSelf(); true }
                 setOnPreparedListener { it.start() }
@@ -78,6 +117,11 @@ class AzanService : Service() {
         } catch (_: Exception) {
             stopSelf()
         }
+    }
+
+    private fun cancelPendingDua() {
+        pendingDua?.let { handler.removeCallbacks(it) }
+        pendingDua = null
     }
 
     /**
@@ -101,8 +145,8 @@ class AzanService : Service() {
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AzanUlm:azan").apply {
             setReferenceCounted(false)
-            // Safety cap; released earlier in onDestroy when the azan ends.
-            acquire(3 * 60 * 1000L)
+            // Safety cap (azan + pause + du'a ≈ 4 min max); released earlier in onDestroy.
+            acquire(10 * 60 * 1000L)
         }
     }
 
@@ -145,6 +189,7 @@ class AzanService : Service() {
     }
 
     override fun onDestroy() {
+        cancelPendingDua()
         AzanPlaybackState.setPlaying(null)
         player?.release()
         player = null
@@ -159,5 +204,6 @@ class AzanService : Service() {
         const val EXTRA_PRAYER = "prayer"
         private const val CHANNEL_ID = "azan_channel"
         private const val NOTIF_ID = 4242
+        private const val DUA_DELAY_MS = 2_000L
     }
 }
