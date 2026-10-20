@@ -10,17 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -87,12 +84,14 @@ fun ReviewScreen(
         }
     }
 
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    SkyBackground(rememberSkyPhase()) {
         Column(Modifier.fillMaxSize()) {
-            BrandHeader(
-                title = "Review times",
-                arabic = "مراجعة الأوقات",
-                subtitle = "Check each day, fix anything, then Save. Empty fields are skipped."
+            SkyTopBar(title = "Review times", arabic = "مراجعة الأوقات", onBack = onCancel)
+            Text(
+                "Check each day, fix anything, then Save. Empty fields are skipped.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Sky.TextSoft,
+                modifier = Modifier.padding(horizontal = 20.dp)
             )
 
             LazyColumn(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -103,7 +102,10 @@ fun ReviewScreen(
                         Image(
                             bitmap = bmp,
                             contentDescription = "Scanned sheet",
-                            modifier = Modifier.fillMaxWidth().height(180.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(20.dp)),
                             contentScale = ContentScale.Fit
                         )
                         Spacer(Modifier.height(12.dp))
@@ -112,18 +114,8 @@ fun ReviewScreen(
 
                 error?.let {
                     item {
-                        Card(
-                            Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        ) {
-                            Text(
-                                it,
-                                Modifier.padding(12.dp),
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
+                        GlassCard(highlight = true) {
+                            Text(it, color = Sky.Danger)
                         }
                         Spacer(Modifier.height(12.dp))
                     }
@@ -147,7 +139,8 @@ fun ReviewScreen(
 
                 item {
                     Spacer(Modifier.height(8.dp))
-                    Button(
+                    GlassButton(
+                        primary = true,
                         onClick = {
                             val result = buildDays(editRows)
                             if (result == null) {
@@ -158,21 +151,21 @@ fun ReviewScreen(
                                 onSave(result)
                             }
                         },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            "Save ${editRows.size} ${if (editRows.size == 1) "day" else "days"} " +
+                            fontWeight = FontWeight.SemiBold,
+                            text = "Save ${editRows.size} ${if (editRows.size == 1) "day" else "days"} " +
                                 "& schedule azan"
                         )
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
+                    GlassButton(
                         onClick = onCancel,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) { Text("Cancel") }
                     Spacer(Modifier.height(24.dp))
+                    Spacer(Modifier.navigationBarsPadding())
                 }
             }
         }
@@ -181,23 +174,22 @@ fun ReviewScreen(
 
 @Composable
 private fun DayCard(row: EditRow) {
-    val container =
-        if (row.complete) MaterialTheme.colorScheme.surface
-        else MaterialTheme.colorScheme.secondaryContainer
-    Card(
-        Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = container)
-    ) {
-        Column(Modifier.padding(12.dp)) {
+    val sky = LocalSkyPalette.current
+    GlassCard(highlight = !row.complete, contentPadding = 14.dp) {
+        Column {
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                StarBullet(10)
-                Spacer(Modifier.height(0.dp))
                 Text(
-                    "  " + row.date.format(ROW_DATE) + if (!row.complete) "  · check this row" else "",
-                    fontWeight = FontWeight.Bold,
+                    row.date.format(ROW_DATE),
+                    fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.titleMedium
                 )
+                if (!row.complete) {
+                    Text(
+                        "  · check this row",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = sky.accent
+                    )
+                }
             }
             Spacer(Modifier.height(8.dp))
             val cols = Prayer.columns

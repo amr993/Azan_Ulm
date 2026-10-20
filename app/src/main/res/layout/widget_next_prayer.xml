@@ -4,9 +4,9 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/widget_background"
+    android:background="@drawable/widget_sky_night"
     android:paddingHorizontal="14dp"
-    android:paddingVertical="10dp"
+    android:paddingVertical="8dp"
     android:gravity="center">
 
     <LinearLayout
@@ -17,46 +17,34 @@
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="13dp"
-            android:layout_height="13dp"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
             android:src="@drawable/ic_crescent_star"
-            android:tint="@color/widget_gold_light"
+            android:tint="@color/widget_accent"
             android:contentDescription="@null" />
 
         <TextView
-            android:id="@+id/widget_label"
+            android:id="@+id/widget_prayer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
-            android:text="@string/widget_next_prayer"
-            android:textColor="@color/widget_gold_light"
-            android:textSize="10sp"
-            android:letterSpacing="0.14"
-            android:textAllCaps="true"
-            android:maxLines="1" />
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="—"
+            android:textColor="@color/widget_text_soft"
+            android:textSize="13sp"
+            android:fontFamily="sans-serif-medium" />
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/widget_prayer"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:text="—"
-        android:textColor="@color/widget_text"
-        android:textSize="17sp"
-        android:fontFamily="sans-serif-medium" />
 
     <Chronometer
         android:id="@+id/widget_countdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:maxLines="1"
-        android:textColor="@color/widget_gold_light"
+        android:textColor="@color/widget_text"
         android:textSize="26sp"
-        android:textStyle="bold"
-        android:fontFamily="sans-serif-medium" />
+        android:fontFamily="sans-serif-light"
+        android:fontFeatureSettings="tnum" />
 
     <TextView
         android:id="@+id/widget_empty"

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget sky: dawn -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="270"
+        android:type="linear"
+        android:startColor="#E61B1F4E"
+        android:centerColor="#E65B3F86"
+        android:endColor="#E6C97A86" />
+    <corners android:radius="22dp" />
+    <stroke
+        android:width="1dp"
+        android:color="#33FFFFFF" />
+</shape>

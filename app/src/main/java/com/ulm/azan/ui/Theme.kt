@@ -1,73 +1,90 @@
 package com.ulm.azan.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.ulm.azan.data.DayPhase
 
-/** Brand palette and decorative brushes for the modern Islamic look. */
-object Brand {
-    val EmeraldDeep = Color(0xFF06443A)
-    val Emerald = Color(0xFF0B6B57)
-    val EmeraldLight = Color(0xFF2E8B73)
-    val Gold = Color(0xFFC9A24B)
-    val GoldLight = Color(0xFFE6CF92)
-    val Ivory = Color(0xFFF6F1E7)
-    val Sand = Color(0xFFEAE0CC)
-    val Cream = Color(0xFFFFFDF8)
-    val Ink = Color(0xFF14241F)
-    val NightBg = Color(0xFF081512)
-    val NightSurface = Color(0xFF0E211C)
-
-    val headerBrush: Brush
-        get() = Brush.verticalGradient(listOf(Emerald, EmeraldDeep))
+/** Fixed colours shared by every sky. */
+object Sky {
+    val Gold = Color(0xFFF4C977)
+    val Text = Color.White
+    val TextSoft = Color(0xC7FFFFFF)
+    val TextFaint = Color(0x8CFFFFFF)
+    val NightBase = Color(0xFF070B1F)
+    val OnAccent = Color(0xFF1E1404)
+    val Danger = Color(0xFFFFB4AB)
 }
 
-private val LightColors = lightColorScheme(
-    primary = Brand.Emerald,
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFD7EFE6),
-    onPrimaryContainer = Brand.EmeraldDeep,
-    secondary = Brand.Gold,
-    onSecondary = Color(0xFF2A2000),
-    secondaryContainer = Color(0xFFF3E7C6),
-    onSecondaryContainer = Color(0xFF4A3A12),
-    background = Brand.Ivory,
-    onBackground = Brand.Ink,
-    surface = Brand.Cream,
-    onSurface = Brand.Ink,
-    surfaceVariant = Brand.Sand,
-    onSurfaceVariant = Color(0xFF505A52),
-    outline = Color(0xFFB9A87E),
-    error = Color(0xFFB3261E),
-    onError = Color.White
+/** Gradient + glass colours for one part of the day. */
+data class SkyPalette(
+    val top: Color,
+    val mid: Color,
+    val bottom: Color,
+    val accent: Color,
+    val glass: Color,
+    val glassBorder: Color,
+    val stars: Boolean,
 )
 
-private val DarkColors = darkColorScheme(
-    primary = Brand.EmeraldLight,
-    onPrimary = Color(0xFF00150F),
-    primaryContainer = Brand.Emerald,
+fun DayPhase.palette(): SkyPalette = when (this) {
+    DayPhase.NIGHT -> SkyPalette(
+        top = Color(0xFF050816), mid = Color(0xFF101A44), bottom = Color(0xFF2A2F72),
+        accent = Color(0xFFF4C977), glass = Color(0x1AFFFFFF), glassBorder = Color(0x29FFFFFF),
+        stars = true
+    )
+    DayPhase.DAWN -> SkyPalette(
+        top = Color(0xFF1B1F4E), mid = Color(0xFF5B3F86), bottom = Color(0xFFC97A86),
+        accent = Color(0xFFFFD3B5), glass = Color(0x1FFFFFFF), glassBorder = Color(0x33FFFFFF),
+        stars = true
+    )
+    DayPhase.DAY -> SkyPalette(
+        top = Color(0xFF0A3F8C), mid = Color(0xFF1F6FC9), bottom = Color(0xFF5AA2E3),
+        accent = Color(0xFFFFE9A8), glass = Color(0x2A06285A), glassBorder = Color(0x38FFFFFF),
+        stars = false
+    )
+    DayPhase.AFTERNOON -> SkyPalette(
+        top = Color(0xFF6E3410), mid = Color(0xFFB0611C), bottom = Color(0xFFD98F3E),
+        accent = Color(0xFFFFE2A6), glass = Color(0x2E3A1600), glassBorder = Color(0x38FFFFFF),
+        stars = false
+    )
+    DayPhase.SUNSET -> SkyPalette(
+        top = Color(0xFF2A1745), mid = Color(0xFF8C2F4A), bottom = Color(0xFFE0703A),
+        accent = Color(0xFFFFC98A), glass = Color(0x29200A20), glassBorder = Color(0x33FFFFFF),
+        stars = false
+    )
+}
+
+/** The palette of the sky currently behind the content. */
+val LocalSkyPalette = staticCompositionLocalOf { DayPhase.NIGHT.palette() }
+
+private val SkyColors = darkColorScheme(
+    primary = Sky.Gold,
+    onPrimary = Sky.OnAccent,
+    primaryContainer = Color(0x33FFFFFF),
     onPrimaryContainer = Color.White,
-    secondary = Brand.GoldLight,
-    onSecondary = Color(0xFF2A2000),
-    secondaryContainer = Color(0xFF5A4A1E),
-    onSecondaryContainer = Brand.GoldLight,
-    background = Brand.NightBg,
-    onBackground = Color(0xFFE7EDE8),
-    surface = Brand.NightSurface,
-    onSurface = Color(0xFFE7EDE8),
-    surfaceVariant = Color(0xFF24332D),
-    onSurfaceVariant = Color(0xFFB9C6BE),
-    outline = Color(0xFF6E7B72),
-    error = Color(0xFFF2B8B5),
-    onError = Color(0xFF2A0000)
+    secondary = Color(0xFFBFD4FF),
+    onSecondary = Color(0xFF0B1A3A),
+    secondaryContainer = Color(0x29FFFFFF),
+    onSecondaryContainer = Color.White,
+    background = Sky.NightBase,
+    onBackground = Color.White,
+    surface = Color(0xFF151C45),
+    onSurface = Color.White,
+    surfaceVariant = Color(0x1FFFFFFF),
+    onSurfaceVariant = Sky.TextSoft,
+    outline = Color(0x73FFFFFF),
+    outlineVariant = Color(0x33FFFFFF),
+    error = Sky.Danger,
+    onError = Color(0xFF690005),
+    errorContainer = Color(0x66B3261E),
+    onErrorContainer = Color(0xFFFFDAD6),
 )
 
+/** The whole app sits on a sky, so it always uses the light-on-dark scheme. */
 @Composable
 fun AzanTheme(content: @Composable () -> Unit) {
-    val colors = if (isSystemInDarkTheme()) DarkColors else LightColors
-    MaterialTheme(colorScheme = colors, content = content)
+    MaterialTheme(colorScheme = SkyColors, content = content)
 }

@@ -11,12 +11,14 @@ import android.view.View
 import android.widget.RemoteViews
 import com.ulm.azan.MainActivity
 import com.ulm.azan.R
+import com.ulm.azan.data.DayPhase
 import com.ulm.azan.data.NextPrayer
 import com.ulm.azan.data.Times
 import com.ulm.azan.data.Settings
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -50,25 +52,35 @@ class AzanWidgetProvider : AppWidgetProvider() {
             for (id in ids) updateWidget(context, manager, id)
         }
 
+        private fun skyBackground(phase: DayPhase): Int = when (phase) {
+            DayPhase.NIGHT -> R.drawable.widget_sky_night
+            DayPhase.DAWN -> R.drawable.widget_sky_dawn
+            DayPhase.DAY -> R.drawable.widget_sky_day
+            DayPhase.AFTERNOON -> R.drawable.widget_sky_afternoon
+            DayPhase.SUNSET -> R.drawable.widget_sky_sunset
+        }
+
         private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
             val views = RemoteViews(context.packageName, R.layout.widget_next_prayer)
 
             val settings = Settings(context)
+
+            // Same sky as the app: background follows the part of the day.
+            val phase = DayPhase.of(Times.forDate(context, LocalDate.now()), LocalTime.now())
+            views.setInt(R.id.widget_root, "setBackgroundResource", skyBackground(phase))
             val next = NextPrayer.compute(Times.window(context, LocalDate.now(), 3), settings, LocalDateTime.now())
 
             if (next == null) {
-                views.setViewVisibility(R.id.widget_header, View.GONE)
                 views.setViewVisibility(R.id.widget_countdown, View.GONE)
                 views.setViewVisibility(R.id.widget_empty, View.VISIBLE)
                 views.setTextViewText(R.id.widget_prayer, "Azan Ulm")
                 views.setTextViewText(
                     R.id.widget_empty,
                     if (!settings.enabled) "Azan is turned off"
-                    else "Open the app to add this month's times"
+                    else "No prayer is selected for the azan"
                 )
             } else {
                 val (prayer, dateTime) = next
-                views.setViewVisibility(R.id.widget_header, View.VISIBLE)
                 views.setViewVisibility(R.id.widget_countdown, View.VISIBLE)
                 views.setViewVisibility(R.id.widget_empty, View.GONE)
                 views.setTextViewText(

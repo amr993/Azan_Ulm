@@ -9,15 +9,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -110,9 +111,15 @@ fun SettingsScreen(
     val hasBackground = AppPermissions.hasBackgroundLocation(context)
     val homeSet = settings.homeSet
 
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            BrandHeader(title = "Settings", arabic = "الإعدادات", onBack = onBack)
+    SkyBackground(rememberSkyPhase()) {
+        val sky = LocalSkyPalette.current
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+        ) {
+            SkyTopBar(title = "Settings", arabic = "الإعدادات", onBack = onBack)
 
             Column(Modifier.padding(16.dp)) {
 
@@ -121,7 +128,7 @@ fun SettingsScreen(
                         enabled = it; settings.enabled = it; onChanged()
                     }
                     Spacer(Modifier.height(4.dp))
-                    OrnamentalDivider()
+                    GlassDivider()
                     Spacer(Modifier.height(8.dp))
                     Text("Play azan for", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     for (p in Prayer.azanPrayers) {
@@ -146,7 +153,7 @@ fun SettingsScreen(
                         StatusLine("Allowed all the time", hasBackground)
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
+                    GlassButton(
                         onClick = {
                             if (!hasLocation) {
                                 fineLocationLauncher.launch(
@@ -163,7 +170,7 @@ fun SettingsScreen(
 
                     if (homeSet) {
                         Spacer(Modifier.height(8.dp))
-                        OutlinedButton(
+                        GlassButton(
                             onClick = {
                                 settings.clearHome()
                                 HomeGeofence.sync(context)
@@ -176,7 +183,7 @@ fun SettingsScreen(
 
                     if (gateEnabled && AppPermissions.needsBackgroundLocation() && !hasBackground) {
                         Spacer(Modifier.height(8.dp))
-                        OutlinedButton(
+                        GlassButton(
                             onClick = { bgLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
@@ -185,7 +192,7 @@ fun SettingsScreen(
 
                     homeMsg?.let {
                         Spacer(Modifier.height(6.dp))
-                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = sky.accent)
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
@@ -196,7 +203,7 @@ fun SettingsScreen(
                             "nothing ever leaves your phone. \"Allow all the time\" is required by " +
                             "Android for the geofence to work.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Sky.TextSoft
                     )
                 }
 
@@ -206,14 +213,14 @@ fun SettingsScreen(
                     StatusLine("Notifications allowed", notificationsOn)
                     Spacer(Modifier.height(8.dp))
                     if (AppPermissions.needsNotificationPermission() && !notificationsOn) {
-                        OutlinedButton(
+                        GlassButton(
                             onClick = onRequestNotifications,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
                         ) { Text("Allow notifications") }
                         Spacer(Modifier.height(8.dp))
                     }
-                    OutlinedButton(
+                    GlassButton(
                         onClick = onOpenNotificationSettings,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
@@ -226,7 +233,7 @@ fun SettingsScreen(
                     StatusLine("Exact alarms", canExact)
                     AppPermissions.exactAlarmSettingsIntent(context)?.let { intent ->
                         if (!canExact) {
-                            OutlinedButton(
+                            GlassButton(
                                 onClick = { context.startActivity(intent) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp)
@@ -236,7 +243,7 @@ fun SettingsScreen(
                     Spacer(Modifier.height(8.dp))
                     StatusLine("Ignoring battery optimization", ignoringBattery)
                     if (!ignoringBattery) {
-                        OutlinedButton(
+                        GlassButton(
                             onClick = { context.startActivity(AppPermissions.batteryOptimizationIntent(context)) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp)
@@ -247,7 +254,7 @@ fun SettingsScreen(
                         "The app does no background work between prayers — it only wakes for a few " +
                             "seconds at each prayer time, then sleeps.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Sky.TextSoft
                     )
                 }
 
@@ -257,16 +264,16 @@ fun SettingsScreen(
                     Text(
                         "Listen to the azan exactly as it will play at prayer time.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Sky.TextSoft
                     )
                     Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
+                    GlassButton(
                         onClick = { onTestAzan(Prayer.DHUHR) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     ) { Text(if (playing == Prayer.DHUHR.key) "Stop" else "Preview the azan") }
                     Spacer(Modifier.height(8.dp))
-                    OutlinedButton(
+                    GlassButton(
                         onClick = { onTestAzan(Prayer.FAJR) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
@@ -291,7 +298,7 @@ fun SettingsScreen(
                             "new timetable from the home screen, its times replace the calculated ones " +
                             "for those days. Past months are removed automatically.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Sky.TextSoft
                     )
                 }
 
@@ -309,7 +316,7 @@ fun SettingsScreen(
                             "The app works completely offline — it has no internet access and " +
                             "your data never leaves the phone.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Sky.TextSoft
                     )
                 }
 
@@ -321,19 +328,18 @@ fun SettingsScreen(
 
 @Composable
 private fun SectionCard(title: String, arabic: String, content: @Composable () -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(arabic, style = MaterialTheme.typography.titleSmall, color = Brand.Gold)
-            }
-            Spacer(Modifier.height(8.dp))
-            content()
+    val sky = LocalSkyPalette.current
+    GlassCard(contentPadding = 18.dp) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(arabic, style = MaterialTheme.typography.titleSmall, color = sky.accent)
         }
+        Spacer(Modifier.height(10.dp))
+        content()
     }
 }
 
@@ -346,7 +352,7 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
     ) {
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         Spacer(Modifier.height(0.dp))
-        Switch(checked = checked, onCheckedChange = onChange)
+        Switch(checked = checked, onCheckedChange = onChange, colors = skySwitchColors())
     }
 }
 
@@ -354,13 +360,20 @@ private fun ToggleRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
 private fun StatusLine(label: String, ok: Boolean) {
     Row(
         Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
+        val sky = LocalSkyPalette.current
         Text(
             if (ok) "On" else "Off",
-            color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.labelMedium,
+            color = if (ok) Sky.OnAccent else Color.White,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(if (ok) sky.accent else Color(0x66B3261E))
+                .padding(horizontal = 10.dp, vertical = 2.dp)
         )
     }
 }
