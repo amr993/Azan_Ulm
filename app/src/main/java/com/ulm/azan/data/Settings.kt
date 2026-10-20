@@ -18,6 +18,19 @@ class Settings(context: Context) {
         get() = sp.getBoolean(KEY_LOC_GATE, false)
         set(v) = sp.edit().putBoolean(KEY_LOC_GATE, v).apply()
 
+    /** Play the day's du'a just before the Fajr azan (one per weekday). */
+    var fajrDuaEnabled: Boolean
+        get() = sp.getBoolean(KEY_FAJR_DUA, true)
+        set(v) = sp.edit().putBoolean(KEY_FAJR_DUA, v).apply()
+
+    /**
+     * Fajr time (epoch ms) whose azan was already started right after the
+     * pre-Fajr du'a, so the regular Fajr alarm doesn't play it a second time.
+     */
+    var fajrAzanHandledAt: Long
+        get() = sp.getLong(KEY_FAJR_HANDLED, 0L)
+        set(v) = sp.edit().putLong(KEY_FAJR_HANDLED, v).apply()
+
     val homeSet: Boolean
         get() = sp.contains(KEY_HOME_LAT) && sp.contains(KEY_HOME_LNG)
 
@@ -62,6 +75,8 @@ class Settings(context: Context) {
         const val RADIUS_METERS = 1000f
         private const val KEY_ENABLED = "enabled"
         private const val KEY_LOC_GATE = "loc_gate"
+        private const val KEY_FAJR_DUA = "fajr_dua"
+        private const val KEY_FAJR_HANDLED = "fajr_handled_at"
         private const val KEY_HOME_LAT = "home_lat"
         private const val KEY_HOME_LNG = "home_lng"
         private const val KEY_GEOFENCE_ACTIVE = "geofence_active"

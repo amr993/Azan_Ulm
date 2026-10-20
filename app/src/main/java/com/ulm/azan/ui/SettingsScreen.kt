@@ -67,6 +67,7 @@ fun SettingsScreen(
     var locVersion by remember { mutableIntStateOf(0) }
     var homeMsg by remember { mutableStateOf<String?>(null) }
     var gateEnabled by remember { mutableStateOf(settings.locationGateEnabled) }
+    var fajrDua by remember { mutableStateOf(settings.fajrDuaEnabled) }
 
     fun captureHome() {
         LocationGate.captureCurrent(context) { lat, lng ->
@@ -137,6 +138,18 @@ fun SettingsScreen(
                             state.value = it; settings.setPrayerEnabled(p, it); onChanged()
                         }
                     }
+                    Spacer(Modifier.height(4.dp))
+                    GlassDivider()
+                    Spacer(Modifier.height(4.dp))
+                    ToggleRow("Du'a before the Fajr azan", fajrDua && enabled) {
+                        fajrDua = it; settings.fajrDuaEnabled = it; onChanged()
+                    }
+                    Text(
+                        "A different du'a each weekday, timed to end just before Fajr so " +
+                            "the azan still starts on time. The seven repeat every week.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Sky.TextSoft
+                    )
                 }
 
                 Spacer(Modifier.height(12.dp))

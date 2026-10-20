@@ -9,7 +9,10 @@ import com.ulm.azan.data.Times
 import com.ulm.azan.location.LocationGate
 import java.time.LocalDate
 
-/** Receives the exact alarms: plays the azan (or notifies if away), then re-arms. */
+/**
+ * Receives the exact alarms: the pre-Fajr du'a, the azan (or a notification if
+ * away from home), then re-arms.
+ */
 class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == PrayerScheduler.ACTION_AZAN) {
@@ -23,6 +26,18 @@ class AlarmReceiver : BroadcastReceiver() {
                 val svc = Intent(context, AzanService::class.java).apply {
                     action = AzanService.ACTION_PLAY
                     putExtra(AzanService.EXTRA_PRAYER, prayer.key)
+                    putExtra(AzanService.EXTRA_SCHEDULED, true)
+                }
+                ContextCompat.startForegroundService(context, svc)
+            }
+        }
+        if (intent.action == PrayerScheduler.ACTION_PRE_FAJR) {
+            val fajrAt = intent.getLongExtra(PrayerScheduler.EXTRA_FAJR_AT, 0L)
+            // Away from home: stay silent (the Fajr alarm will send its own reminder).
+            if (fajrAt > System.currentTimeMillis() && !LocationGate.evaluate(context).away) {
+                val svc = Intent(context, AzanService::class.java).apply {
+                    action = AzanService.ACTION_PRE_FAJR
+                    putExtra(AzanService.EXTRA_FAJR_AT, fajrAt)
                 }
                 ContextCompat.startForegroundService(context, svc)
             }
