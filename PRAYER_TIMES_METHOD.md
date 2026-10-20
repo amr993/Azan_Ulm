@@ -3,6 +3,10 @@
 Reverse-engineered from the mosque's printed timetables and built into the app
 (`calc/PrayerCalculator.kt`), so no monthly scanning is needed.
 
+**Scanning and calculation work together:** for every day and prayer, a time from a
+scanned timetable is used when one exists; otherwise the calculated time is used.
+Scan a new sheet whenever you like and its exact times take over for those days.
+
 ## The method (Diyanet, computed for Ulm)
 
 | | Rule |

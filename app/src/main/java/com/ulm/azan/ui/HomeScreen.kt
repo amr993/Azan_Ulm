@@ -258,7 +258,6 @@ fun HomeScreen(
                     )
                 }
 
-                if (!settings.autoCalcEnabled) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Monthly timetable",
@@ -279,32 +278,28 @@ fun HomeScreen(
                     shape = RoundedCornerShape(14.dp)
                 ) { Text("Photograph the timetable") }
                 Spacer(Modifier.height(8.dp))
-                }
                 OutlinedButton(
                     onClick = onOpenSettings,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 ) { Text("Settings") }
 
-                if (settings.autoCalcEnabled) {
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        "Prayer times are calculated on this phone (the mosque's method)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                } else store.dateRange()?.let { range ->
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        "Prayer times available until ${range.second.format(DATE_FMT)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                val scannedRange = remember(dataVersion) { store.dateRange() }
+                val todayScanned = scannedRange != null &&
+                    !today.isBefore(scannedRange.first) && !today.isAfter(scannedRange.second)
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    if (todayScanned)
+                        "Using the scanned timetable until ${scannedRange!!.second.format(DATE_FMT)} · " +
+                            "other days are calculated automatically"
+                    else
+                        "Times calculated on this phone (mosque's method) · " +
+                            "scan a timetable to use its exact times",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(Modifier.height(24.dp))
             }
         }
